@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keybrame - Panel de Control</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link rel="stylesheet" href="/static/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Server offline overlay -->
+    <div id="server-offline-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+        <i class="fas fa-power-off" style="font-size:3rem;color:#ef4444;"></i>
+        <p style="color:#fff;font-size:1.4rem;font-weight:600;">Servidor apagado</p>
+        <p style="color:#aaa;font-size:0.95rem;">Cerrá esta pestaña o volvé a iniciar Keybrame.</p>
+    </div>
+    <!-- Update installing overlay -->
+    <div id="server-updating-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+        <i class="fas fa-sync-alt fa-spin" style="font-size:3rem;color:#3b82f6;"></i>
+        <p style="color:#fff;font-size:1.4rem;font-weight:600;">Instalando actualización...</p>
+        <p style="color:#aaa;font-size:0.95rem;">El programa se reiniciará en unos segundos.</p>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1><i class="fas fa-keyboard"></i> Keybrame - Panel de Control <span id="version-badge" style="font-size:0.5em;background:rgba(255,255,255,0.15);padding:3px 10px;border-radius:20px;vertical-align:middle;font-weight:400;"></span></h1>
+            <div class="header-actions">
+                <button id="btn-reload" class="btn btn-secondary">
+                    <i class="fas fa-sync-alt"></i> Recargar
+                </button>
+                <button id="btn-export" class="btn btn-secondary">
+                    <i class="fas fa-download"></i> Exportar
+                </button>
+                <button id="btn-import" class="btn btn-secondary">
+                    <i class="fas fa-upload"></i> Importar
+                </button>
+                <button id="btn-restart" class="btn btn-warning">
+                    <i class="fas fa-redo"></i> Reiniciar
+                </button>
+                <button id="btn-shutdown" class="btn btn-danger">
+                    <i class="fas fa-power-off"></i> Apagar
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <!-- Settings and Preview Layout -->
+        <div class="settings-preview-grid">
+            <!-- Preview en Tiempo Real -->
+            <section class="card preview-card">
+                <div class="section-header">
+                    <h2><i class="fas fa-eye"></i> Vista previa en tiempo real</h2>
+                </div>
+
+                <div id="preview-container" class="preview-container">
+                    <div class="preview-info">
+                        <p><i class="fas fa-info-circle"></i> Presiona las teclas configuradas para ver los cambios en tiempo real</p>
+                    </div>
+                    <iframe id="preview-iframe" src="/" frameborder="0"></iframe>
+                </div>
+
+                <!-- Panel de teclas presionadas -->
+                <div class="pressed-keys-panel">
+                    <h3><i class="fas fa-keyboard"></i> Teclas presionadas</h3>
+                    <div id="pressed-keys-display" class="pressed-keys-display">
+                        <span class="no-keys-message">Ninguna tecla presionada</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Card -->
+            <section class="card settings-card">
+                <h2><i class="fas fa-cog"></i> Configuración</h2>
+
+                <!-- URL para OBS -->
+                <div style="background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.3); border-radius: 14px; padding: 20px; margin-bottom: 20px;">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 12px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-video"></i> URL para OBS Browser Source
+                    </h3>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 12px;">
+                        Copia esta URL y úsala en OBS como fuente de navegador (Browser Source):
+                    </p>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="obs-url-display" class="input" readonly style="font-family: monospace; cursor: text;">
+                        <button id="btn-copy-obs-url" class="btn btn-primary" style="white-space: nowrap;">
+                            <i class="fas fa-copy"></i> Copiar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Imagen Predeterminada -->
+                <div class="default-image-section">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem;">
+                        <i class="fas fa-image"></i> Imagen predeterminada
+                    </label>
+                    <div class="default-image-container">
+                        <div class="default-image-preview" id="default-image-preview">
+                            <img id="default-image-preview-img" src="" alt="Sin imagen" style="display: none;">
+                            <span id="default-image-placeholder" style="color: var(--text-secondary);">
+                                <i class="fas fa-image" style="font-size: 1.5rem; opacity: 0.3;"></i>
+                                <p style="margin-top: 4px; font-size: 0.8rem;">Sin imagen</p>
+                            </span>
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-sm" id="btn-select-default-image">
+                            <i class="fas fa-folder-open"></i> Examinar
+                        </button>
+                    </div>
+                    <input type="text" id="input-default-image" style="display: none;">
+                </div>
+
+                <div class="form-actions">
+                    <button id="btn-save-settings" class="btn btn-primary">Guardar Configuración</button>
+                </div>
+            </section>
+        </div>
+
+        <!-- Atajos de Teclado Section -->
+        <section class="card keybindings-section">
+            <div class="section-header">
+                <h2><i class="fas fa-gamepad"></i> Atajos de teclado</h2>
+                <button id="btn-add-keybinding" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Agregar Atajo
+                </button>
+            </div>
+
+            <div id="keybindings-list" class="keybindings-list">
+                <!-- Atajos de Teclado will be rendered here -->
+            </div>
+
+            <div id="empty-state" class="empty-state" style="display: none;">
+                <p>No hay atajos configurados aún.</p>
+                <button class="btn btn-primary" onclick="document.getElementById('btn-add-keybinding').click()">
+                    Agrega tu primer atajo
+                </button>
+            </div>
+        </section>
+
+        <!-- Galería de Imágenes Section -->
+        <section class="card">
+            <h2><i class="fas fa-images"></i> Galería de imágenes</h2>
+
+            <!-- Upload Area -->
+            <div class="upload-area" id="upload-area">
+                <div class="upload-area-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                <h3>Subir imágenes</h3>
+                <p>Arrastra imágenes aquí o haz click para examinar</p>
+                <p style="font-size: 0.8rem; margin-top: 8px;">Formatos: PNG, JPG, GIF, WEBP, BMP</p>
+            </div>
+
+            <!-- Images Grid -->
+            <div class="images-grid" id="images-grid">
+                <!-- Images will be rendered here -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal -->
+    <div id="modal" class="modal" style="display: none;">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Agregar Atajo</h3>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="keybinding-form">
+                    <!-- Keys -->
+                    <div class="form-group">
+                        <label>Teclas / Botones</label>
+                        <div class="key-chips-container" id="modal-key-chips"></div>
+                        <div style="display: flex; gap: 8px; margin-top: 8px;">
+                            <button type="button" class="btn btn-primary" id="btn-record-keys" style="flex: 1;">
+                                <i class="fas fa-circle"></i> <span id="record-btn-text">Grabar Teclas</span>
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="btn-clear-keys" title="Limpiar teclas">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        <p id="record-hint" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px; display: none;">
+                            <i class="fas fa-info-circle"></i> Presiona las teclas que quieres asignar. Clic en "Detener" cuando termines.
+                        </p>
+                    </div>
+
+                    <!-- Type -->
+                    <div class="form-group">
+                        <label>Tipo</label>
+                        <div class="type-selector">
+                            <button type="button" class="type-btn active" data-type="toggle">
+                                <i class="fas fa-sync-alt"></i>
+                                <span>Alternar</span>
+                                <small>Se activa/desactiva al presionar</small>
+                            </button>
+                            <button type="button" class="type-btn" data-type="hold">
+                                <i class="fas fa-hand-paper"></i>
+                                <span>Mantener</span>
+                                <small>Activo solo mientras mantienes presionado</small>
+                            </button>
+                        </div>
+                        <input type="hidden" id="modal-input-type" value="toggle">
+                    </div>
+
+                    <!-- Image -->
+                    <div class="form-group">
+                        <label for="modal-input-image">Imagen</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="modal-input-image" class="input" readonly placeholder="Click para seleccionar..." required style="cursor: pointer;">
+                            <button type="button" class="btn btn-secondary" id="btn-select-image" style="white-space: nowrap;">
+                                Examinar
+                            </button>
+                        </div>
+                        <div id="modal-image-preview" class="image-preview"></div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="form-group">
+                        <label for="modal-input-description">Descripción (opcional)</label>
+                        <input type="text" id="modal-input-description" class="input" placeholder="ej., Imagen principal">
+                    </div>
+
+                    <!-- Transition In -->
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="modal-checkbox-transition-in">
+                            Transición de entrada
+                        </label>
+                        <div id="modal-transition-in-fields" style="display: none; margin-top: 10px;">
+                            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                                <input type="text" id="modal-input-transition-in" class="input" readonly placeholder="Click para seleccionar..." style="cursor: pointer;">
+                                <button type="button" class="btn btn-secondary" id="btn-select-transition-in" style="white-space: nowrap;">
+                                    Examinar
+                                </button>
+                            </div>
+                            <div id="modal-transition-in-preview" class="image-preview"></div>
+                            <input type="number" id="modal-input-duration-in" class="input" placeholder="Duración (ms) - auto si está vacío" min="0">
+                        </div>
+                    </div>
+
+                    <!-- Transition Out -->
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="modal-checkbox-transition-out">
+                            Transición de salida
+                        </label>
+                        <div id="modal-transition-out-fields" style="display: none; margin-top: 10px;">
+                            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                                <input type="text" id="modal-input-transition-out" class="input" readonly placeholder="Click para seleccionar..." style="cursor: pointer;">
+                                <button type="button" class="btn btn-secondary" id="btn-select-transition-out" style="white-space: nowrap;">
+                                    Examinar
+                                </button>
+                            </div>
+                            <div id="modal-transition-out-preview" class="image-preview"></div>
+                            <input type="number" id="modal-input-duration-out" class="input" placeholder="Duración (ms) - auto si está vacío" min="0">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="modal-cancel">Cancelar</button>
+                <button type="submit" form="keybinding-form" class="btn btn-primary" id="modal-save">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Picker Modal -->
+    <div id="image-picker-modal" class="modal" style="display: none;">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h3>Seleccionar imagen</h3>
+                <button class="modal-close" id="image-picker-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Upload button inside image picker -->
+                <div style="margin-bottom: 16px;">
+                    <button class="btn btn-primary" id="btn-upload-from-picker">
+                        <i class="fas fa-upload"></i> Subir Nueva Imagen
+                    </button>
+                </div>
+                <div class="image-picker-grid" id="image-picker-grid">
+                    <!-- Images will be rendered here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="modal" style="display: none;">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content confirm-modal-content">
+            <div class="modal-header">
+                <h3 id="confirm-modal-title">Confirmar acción</h3>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-modal-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="confirm-modal-cancel">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirm-modal-confirm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Hidden File Inputs -->
+    <input type="file" id="import-file-input" accept=".json" style="display: none;">
+    <input type="file" id="upload-file-input" accept="image/*" multiple style="display: none;">
+
+    <!-- Hidden port input (para que JavaScript no falle) -->
+    <input type="hidden" id="input-port">
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="/static/admin.js"></script>
+</body>
+</html>

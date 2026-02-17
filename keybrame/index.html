@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBS Image Switcher</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #image-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #display-image {
+            height: 100%;
+            width: auto;
+            max-width: 100%;
+            object-fit: contain;
+            object-position: center;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            z-index: 1000;
+        }
+
+        .status.connected {
+            background: rgba(0, 200, 0, 0.7);
+        }
+
+        .status.disconnected {
+            background: rgba(200, 0, 0, 0.7);
+        }
+
+        /* Ocultar el indicador de estado después de 3 segundos */
+        .status.hide {
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <div id="image-container">
+        <img id="display-image" src="" alt="">
+    </div>
+
+    <div id="status" class="status disconnected">Desconectado</div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const statusEl = document.getElementById('status');
+        const imageEl = document.getElementById('display-image');
+        let currentTransitionTimeout = null; // Trackear timeout actual
+
+        // Conectar al servidor WebSocket (usa el puerto actual automáticamente)
+        const socket = io();
+
+        socket.on('connect', () => {
+            console.log('✓ Conectado al servidor');
+            statusEl.textContent = 'Conectado';
+            statusEl.className = 'status connected';
+
+            // Ocultar después de 3 segundos
+            setTimeout(() => {
+                statusEl.classList.add('hide');
+            }, 3000);
+        });
+
+        socket.on('disconnect', () => {
+            console.log('✗ Desconectado del servidor');
+            statusEl.textContent = 'Desconectado';
+            statusEl.className = 'status disconnected';
+            statusEl.classList.remove('hide');
+        });
+
+        socket.on('image_change', (data) => {
+            console.log('Cambio de imagen:', data.image);
+
+            // CANCELAR cualquier transición pendiente
+            if (currentTransitionTimeout) {
+                clearTimeout(currentTransitionTimeout);
+                currentTransitionTimeout = null;
+                console.log('⚠ Transición cancelada por image_change');
+            }
+
+            if (data.image) {
+                // Precargar imagen antes de cambiarla (evita flash de "alt")
+                const preloadImg = new Image();
+                preloadImg.onload = () => {
+                    imageEl.src = data.image;
+                };
+                preloadImg.onerror = () => {
+                    // Si falla la precarga, cambiar de todas formas
+                    imageEl.src = data.image;
+                };
+                preloadImg.src = data.image;
+            }
+        });
+
+        socket.on('transition', (data) => {
+            console.log('🎬 TRANSICIÓN RECIBIDA!');
+            console.log('   Transición:', data.transition_image);
+            console.log('   Final:', data.final_image);
+            console.log('   Duración:', data.duration || 'auto', 'ms');
+
+            // CANCELAR cualquier transición pendiente
+            if (currentTransitionTimeout) {
+                clearTimeout(currentTransitionTimeout);
+                currentTransitionTimeout = null;
+                console.log('⚠ Transición anterior cancelada');
+            }
+
+            // Precargar y mostrar imagen de transición
+            const transitionImg = new Image();
+            transitionImg.onload = () => {
+                imageEl.src = data.transition_image;
+                console.log('✅ Mostrando transición:', data.transition_image);
+
+                // Precargar imagen final mientras se muestra la transición
+                const finalImg = new Image();
+                finalImg.src = data.final_image;
+
+                // Programar cambio a imagen final
+                const duration = data.duration || 2000; // Default 2000ms
+                currentTransitionTimeout = setTimeout(() => {
+                    imageEl.src = data.final_image;
+                    currentTransitionTimeout = null;
+                    console.log('✅ Transición completada, mostrando imagen final:', data.final_image);
+                }, duration);
+            };
+            transitionImg.onerror = () => {
+                // Si falla la transición, ir directo a la imagen final
+                imageEl.src = data.final_image;
+            };
+            transitionImg.src = data.transition_image;
+        });
+
+        // Manejo de errores de carga de imagen
+        imageEl.onerror = () => {
+            console.error('Error cargando imagen:', imageEl.src);
+        };
+
+        imageEl.onload = () => {
+            console.log('Imagen cargada:', imageEl.src);
+        };
+    </script>
+</body>
+</html>

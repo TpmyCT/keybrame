@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyc
+
+# Virtual environments
+venv/
+ENV/
+env/
+
+# Build & Distribution
+build/
+dist/
+*.spec
+scripts/app.ico
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Claude Code
+.claude/
+AGENTS.md
+CLAUDE.md
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# User data (generated at runtime)
+data/
+logs/
+
+# User images
+assets/*.png
+assets/*.jpg
+assets/*.gif
+assets/*.jpeg
+assets/*.webp
+assets/*.bmp
+!assets/README.txt
