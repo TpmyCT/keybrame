@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from flask import jsonify, request
 import json
 import sqlite3
@@ -7,13 +5,11 @@ from . import api_bp
 from .validation import validate_keybinding_data
 from keybrame.core.image import calculate_gif_duration
 
-# Variable global que se seteará desde init_api()
 config_manager = None
 
 
 @api_bp.route('/keybindings', methods=['GET'])
 def get_keybindings():
-    """Lista todos los keybindings ordenados por prioridad"""
     try:
         conn = config_manager.get_connection()
         conn.row_factory = sqlite3.Row
@@ -37,7 +33,6 @@ def get_keybindings():
                 'enabled': bool(row['enabled'])
             }
 
-            # Cargar transiciones
             cursor.execute('''
                 SELECT direction, image, duration
                 FROM transitions
@@ -46,9 +41,7 @@ def get_keybindings():
 
             for trans_row in cursor.fetchall():
                 direction = trans_row['direction']
-                trans_data = {
-                    'image': trans_row['image']
-                }
+                trans_data = {'image': trans_row['image']}
                 if trans_row['duration'] is not None:
                     trans_data['duration'] = trans_row['duration']
 
@@ -68,11 +61,9 @@ def get_keybindings():
 
 @api_bp.route('/keybindings', methods=['POST'])
 def create_keybinding():
-    """Crea un nuevo keybinding"""
     try:
         data = request.json
 
-        # Validar datos
         valid, errors = validate_keybinding_data(data)
         if not valid:
             return jsonify({'error': 'Datos inválidos', 'details': errors}), 400
@@ -80,11 +71,9 @@ def create_keybinding():
         conn = config_manager.get_connection()
         cursor = conn.cursor()
 
-        # Obtener máxima prioridad actual
         cursor.execute("SELECT COALESCE(MAX(priority), 0) FROM keybindings")
         max_priority = cursor.fetchone()[0]
 
-        # Insertar keybinding
         cursor.execute('''
             INSERT INTO keybindings (keys, type, image, description, priority)
             VALUES (?, ?, ?, ?, ?)
@@ -98,7 +87,6 @@ def create_keybinding():
 
         keybinding_id = cursor.lastrowid
 
-        # Insertar transiciones si existen
         if 'transition_in' in data and data['transition_in']:
             trans = data['transition_in']
             duration = trans.get('duration')
@@ -130,11 +118,9 @@ def create_keybinding():
 
 @api_bp.route('/keybindings/<int:kb_id>', methods=['PUT'])
 def update_keybinding(kb_id):
-    """Actualiza un keybinding existente"""
     try:
         data = request.json
 
-        # Validar datos
         valid, errors = validate_keybinding_data(data, is_update=True)
         if not valid:
             return jsonify({'error': 'Datos inválidos', 'details': errors}), 400
@@ -142,13 +128,12 @@ def update_keybinding(kb_id):
         conn = config_manager.get_connection()
         cursor = conn.cursor()
 
-        # Verificar que existe
         cursor.execute("SELECT id FROM keybindings WHERE id = ?", (kb_id,))
         if not cursor.fetchone():
             conn.close()
             return jsonify({'error': 'Keybinding no encontrado'}), 404
 
-        # Construir UPDATE dinámico
+        # Build dynamic UPDATE
         updates = []
         values = []
 
@@ -172,7 +157,6 @@ def update_keybinding(kb_id):
             updates.append("enabled = ?")
             values.append(1 if data['enabled'] else 0)
 
-        # Actualizar timestamp
         updates.append("updated_at = CURRENT_TIMESTAMP")
 
         if updates:
@@ -183,14 +167,11 @@ def update_keybinding(kb_id):
                 WHERE id = ?
             ''', values)
 
-        # Actualizar transiciones
         if 'transition_in' in data:
-            # Eliminar existente
             cursor.execute(
                 "DELETE FROM transitions WHERE keybinding_id = ? AND direction = 'in'",
                 (kb_id,)
             )
-            # Insertar nueva si tiene datos
             if data['transition_in']:
                 trans = data['transition_in']
                 duration = trans.get('duration')
@@ -227,18 +208,16 @@ def update_keybinding(kb_id):
 
 @api_bp.route('/keybindings/<int:kb_id>', methods=['DELETE'])
 def delete_keybinding(kb_id):
-    """Elimina un keybinding"""
     try:
         conn = config_manager.get_connection()
         cursor = conn.cursor()
 
-        # Verificar que existe
         cursor.execute("SELECT id FROM keybindings WHERE id = ?", (kb_id,))
         if not cursor.fetchone():
             conn.close()
             return jsonify({'error': 'Keybinding no encontrado'}), 404
 
-        # Eliminar (las transiciones se eliminan automáticamente por CASCADE)
+        # Transitions are removed automatically via CASCADE
         cursor.execute("DELETE FROM keybindings WHERE id = ?", (kb_id,))
 
         conn.commit()
@@ -252,10 +231,9 @@ def delete_keybinding(kb_id):
 
 @api_bp.route('/keybindings/reorder', methods=['PUT'])
 def reorder_keybindings():
-    """Actualiza las prioridades de los keybindings (drag & drop)"""
     try:
         data = request.json
-        # Espera: { "order": [id1, id2, id3, ...] }
+        # Expected: { "order": [id1, id2, id3, ...] }
         order = data.get('order', [])
 
         if not order:
@@ -264,7 +242,7 @@ def reorder_keybindings():
         conn = config_manager.get_connection()
         cursor = conn.cursor()
 
-        # Actualizar prioridades (mayor índice = mayor prioridad)
+        # Higher index = higher priority
         for idx, kb_id in enumerate(order):
             priority = len(order) - idx
             cursor.execute(

@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Aplicación Flask para Keybrame
-Maneja las rutas web y websocket
-"""
-
 import os
 import json
 from flask import Flask, send_from_directory, Response
@@ -27,46 +21,29 @@ def generate_placeholder_svg():
 
 
 def create_app(config_manager, keyboard_handler=None):
-    """
-    Crea y configura la aplicación Flask
-
-    Args:
-        config_manager: Gestor de configuración
-        keyboard_handler: Handler de teclado/mouse (opcional, se setea después)
-
-    Returns:
-        tuple: (app, socketio)
-    """
     static_folder = paths.get_static_dir()
     images_folder = paths.get_images_dir()
 
-    # Crear app Flask
     app = Flask(__name__, static_folder=static_folder)
     app.config['SECRET_KEY'] = 'obs-image-switcher-secret'
     CORS(app)
 
-    # Crear SocketIO
     socketio = SocketIO(app, cors_allowed_origins="*")
 
-    # Variable para almacenar el keyboard_handler
     _keyboard_handler = {'handler': keyboard_handler}
 
-    # Callback para reload de config
     def reload_global_config():
-        """Callback para cuando se actualiza la configuración"""
         print("[INFO] Configuración global actualizada")
         if _keyboard_handler['handler']:
             _keyboard_handler['handler'].reload_config()
             print("[INFO] Keyboard handler recargado")
 
-    # Función para setear el keyboard_handler después de crear la app
     def set_keyboard_handler(handler):
         _keyboard_handler['handler'] = handler
 
-    # Guardar set_keyboard_handler en la app para acceso desde server.py
+    # Expose set_keyboard_handler on the app for access from server.py
     app.set_keyboard_handler = set_keyboard_handler
 
-    # Registrar API
     init_api(config_manager, socketio, reload_global_config)
     app.register_blueprint(api_bp)
 
@@ -74,44 +51,38 @@ def create_app(config_manager, keyboard_handler=None):
 
     @app.route('/')
     def index():
-        """Página principal para OBS Browser Source"""
+        """OBS Browser Source main page"""
         index_path = os.path.join(os.path.dirname(__file__), 'index.html')
         with open(index_path, 'r', encoding='utf-8') as f:
             return f.read()
 
     @app.route('/admin')
     def admin_ui():
-        """Panel de administración web"""
         return send_from_directory(static_folder, 'admin.html')
 
     @app.route('/static/<path:filename>')
     def serve_static(filename):
-        """Servir archivos estáticos"""
         return send_from_directory(static_folder, filename)
 
     @app.route('/config')
     def get_config():
-        """Endpoint legacy para obtener configuración"""
+        """Legacy endpoint for config retrieval"""
         config = config_manager.get_config()
         return json.dumps(config)
 
     @app.route('/assets/placeholder.svg')
     def serve_placeholder():
-        """Devuelve un SVG placeholder cuando no hay imagen configurada"""
         svg = generate_placeholder_svg()
         return Response(svg, mimetype='image/svg+xml')
 
     @app.route('/assets/<path:filename>')
     def serve_assets(filename):
-        """Servir assets (imágenes del usuario)"""
-        # Si es el placeholder, redirigir a la ruta especial
         if filename == 'placeholder.svg':
             return serve_placeholder()
 
         filepath = os.path.join(images_folder, filename)
         if not os.path.exists(filepath):
             print(f"[WARNING] Imagen no encontrada: {filename}")
-            # Devolver el placeholder en vez de 204
             return serve_placeholder()
         return send_from_directory(images_folder, filename)
 
@@ -119,7 +90,6 @@ def create_app(config_manager, keyboard_handler=None):
 
     @socketio.on('connect')
     def handle_connect():
-        """Cliente conectado al websocket"""
         print('[OK] Cliente conectado')
         config = config_manager.get_config()
         default_image = config.get('default_image', '')
@@ -134,7 +104,6 @@ def create_app(config_manager, keyboard_handler=None):
 
     @socketio.on('disconnect')
     def handle_disconnect():
-        """Cliente desconectado del websocket"""
         print('[X] Cliente desconectado')
 
     return app, socketio

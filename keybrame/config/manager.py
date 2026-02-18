@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import sqlite3
 import json
 import os
@@ -97,17 +95,14 @@ class ConfigManager:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        # Verificar si hay rutas viejas (images/ o img/)
         cursor.execute("SELECT COUNT(*) FROM keybindings WHERE image LIKE 'images/%' OR image LIKE 'img/%'")
         old_paths = cursor.fetchone()[0]
 
         if old_paths > 0:
             print("[INFO] Migrando rutas de imagenes...")
-            # Migrar desde images/
             cursor.execute("UPDATE keybindings SET image = REPLACE(image, 'images/', 'assets/')")
             cursor.execute("UPDATE transitions SET image = REPLACE(image, 'images/', 'assets/')")
             cursor.execute("UPDATE settings SET value = REPLACE(value, 'images/', 'assets/') WHERE key = 'default_image'")
-            # Migrar desde img/
             cursor.execute("UPDATE keybindings SET image = REPLACE(image, 'img/', 'assets/')")
             cursor.execute("UPDATE transitions SET image = REPLACE(image, 'img/', 'assets/')")
             cursor.execute("UPDATE settings SET value = REPLACE(value, 'img/', 'assets/') WHERE key = 'default_image'")

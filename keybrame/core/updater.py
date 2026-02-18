@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Auto-updater para Keybrame
-Verifica y descarga actualizaciones desde GitHub Releases
-"""
-
 import os
 import sys
 import subprocess
@@ -59,7 +53,6 @@ def check_for_updates():
 
 
 def download_and_install(update_info):
-    """Descarga el instalador y lo ejecuta en modo silencioso"""
     try:
         download_url = update_info.get('download_url')
         if not download_url:
@@ -88,7 +81,6 @@ def download_and_install(update_info):
                         progress = int((downloaded / total_size) * 100)
                         _socketio.emit('update_progress', {'progress': progress})
 
-        # Verificar que se descargó completo
         if total_size > 0 and downloaded < total_size:
             raise Exception(f'Descarga incompleta: {downloaded}/{total_size} bytes')
 
@@ -125,7 +117,6 @@ def download_and_install(update_info):
 
 
 def check_updates_async(socketio=None):
-    """Verifica actualizaciones en background y notifica via socketio"""
     global _socketio
     if socketio:
         _socketio = socketio

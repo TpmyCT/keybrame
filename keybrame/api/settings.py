@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from flask import jsonify, request
 import json
 import os
@@ -13,7 +11,6 @@ reload_global_config = None
 
 @api_bp.route('/settings', methods=['GET'])
 def get_settings():
-    """Obtiene la configuración general"""
     try:
         conn = config_manager.get_connection()
         cursor = conn.cursor()
@@ -38,7 +35,6 @@ def get_settings():
 
 @api_bp.route('/settings', methods=['PUT'])
 def update_settings():
-    """Actualiza la configuración general"""
     try:
         data = request.json
         conn = config_manager.get_connection()
@@ -97,7 +93,6 @@ def update_settings():
 
 @api_bp.route('/reload', methods=['POST'])
 def reload_config():
-    """Recarga la configuración desde la base de datos"""
     try:
         config_manager.reload()
 
@@ -115,7 +110,6 @@ def reload_config():
 
 @api_bp.route('/export', methods=['GET'])
 def export_config():
-    """Exporta la configuración actual como JSON"""
     try:
         config = config_manager.load_config()
         return jsonify(config)
@@ -126,7 +120,6 @@ def export_config():
 
 @api_bp.route('/import', methods=['POST'])
 def import_config():
-    """Importa configuración desde JSON"""
     try:
         from .validation import validate_keybinding_data
         from keybrame.core.image import calculate_gif_duration

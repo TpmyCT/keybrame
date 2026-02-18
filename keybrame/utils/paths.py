@@ -1,12 +1,9 @@
-#!/usr/bin/env python3
-
 import os
 import sys
 from pathlib import Path
 
 def get_app_data_dir():
     if not getattr(sys, 'frozen', False):
-        # En modo desarrollo, subir 2 niveles desde keybrame/utils/paths.py hasta la raíz
         return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
     if sys.platform == 'win32':
@@ -22,7 +19,6 @@ def get_app_data_dir():
 
 def get_images_dir():
     if not getattr(sys, 'frozen', False):
-        # En modo desarrollo, la carpeta assets está en la raíz
         project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         return os.path.join(project_root, 'assets')
     return os.path.join(get_app_data_dir(), 'assets')
@@ -47,7 +43,6 @@ def ensure_directories():
         for directory in [get_app_data_dir(), get_images_dir(), get_logs_dir()]:
             os.makedirs(directory, exist_ok=True)
     else:
-        # En modo desarrollo, asegurar carpetas locales
         project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         for directory in [get_images_dir(), get_logs_dir(), os.path.join(project_root, 'data')]:
             os.makedirs(directory, exist_ok=True)
@@ -56,14 +51,12 @@ def ensure_directories():
 def get_static_dir():
     if getattr(sys, 'frozen', False):
         return os.path.join(sys._MEIPASS, 'static')
-    # En modo desarrollo, static está en la raíz
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     return os.path.join(project_root, 'static')
 
 def get_base_dir():
     if getattr(sys, 'frozen', False):
         return sys._MEIPASS
-    # En modo desarrollo, la base es la raíz del proyecto
     return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 ensure_directories()

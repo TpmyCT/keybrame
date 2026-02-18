@@ -50,7 +50,7 @@ body {
     -ms-user-select: none;
 }
 
-/* Gradiente sutil en el fondo */
+/* Subtle background gradient */
 body::before {
     content: '';
     position: fixed;
@@ -106,7 +106,7 @@ body::before {
     flex-wrap: wrap;
 }
 
-/* ==================== BOTONES ==================== */
+/* ==================== BUTTONS ==================== */
 .btn {
     padding: 10px 20px;
     border: none;
@@ -215,7 +215,7 @@ body::before {
     font-size: 14px;
 }
 
-/* Toggle Switch para Checkboxes */
+/* Toggle switch for checkboxes */
 .form-group label:has(input[type="checkbox"]) {
     display: flex;
     align-items: center;
@@ -299,7 +299,7 @@ body::before {
     color: var(--text-muted);
 }
 
-/* Permitir selección en campos de texto */
+/* Allow text selection in inputs */
 input[type="text"],
 input[type="number"],
 input[type="email"],
@@ -359,7 +359,7 @@ textarea {
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
 }
 
-/* Chips removables (clickeables para quitar) */
+/* Removable chips (click to remove) */
 .key-chip.removable {
     cursor: pointer;
     position: relative;
@@ -673,7 +673,7 @@ textarea {
     margin: 0 !important;
 }
 
-/* Solo cuando está visible */
+/* Only when visible */
 .modal:not([style*="display: none"]):not([style=""]) {
     display: flex !important;
     align-items: center !important;
@@ -786,7 +786,7 @@ textarea {
     background: var(--bg-elevated);
 }
 
-/* Modal de confirmación - más pequeño y centrado */
+/* Confirmation modal - smaller and centered */
 .confirm-modal-content {
     max-width: 450px;
 }
@@ -1073,7 +1073,7 @@ textarea {
     background: var(--bg-main);
 }
 
-/* Panel de teclas presionadas */
+/* Pressed keys panel */
 .pressed-keys-panel {
     margin-top: 20px;
     padding: 16px;
@@ -1228,9 +1228,9 @@ textarea {
     }
 }
 
-/* ==================== RESPONSIVE MEJORADO ==================== */
+/* ==================== RESPONSIVE ==================== */
 
-/* Pantallas medianas (tablets, ventanas en media pantalla) */
+/* Medium screens (tablets, split windows) */
 @media (max-width: 1024px) {
     .container {
         padding: 0 16px;
@@ -1285,7 +1285,7 @@ textarea {
     }
 }
 
-/* Pantallas pequeñas */
+/* Small screens */
 @media (max-width: 768px) {
     .header .container {
         flex-direction: column;
@@ -1356,7 +1356,7 @@ textarea {
     }
 }
 
-/* Pantallas muy pequeñas */
+/* Extra small screens */
 @media (max-width: 480px) {
     .container {
         padding: 0 12px;

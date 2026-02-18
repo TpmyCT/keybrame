@@ -1,8 +1,3 @@
-/**
- * Keybrame Admin Panel
- * Frontend controller para gestionar configuración y keybindings
- */
-
 class KeybrameAdmin {
     constructor() {
         this.keybindings = [];
@@ -10,11 +5,11 @@ class KeybrameAdmin {
         this.settings = {};
         this.editingId = null;
         this.selectedKeys = [];
-        this.saveSettingsTimeout = null; // Para debounce del auto-save
-        this.pressedKeys = new Set(); // Teclas actualmente presionadas
-        this.isRecording = false; // Estado de grabación de teclas
-        this.recordingKeys = new Set(); // Teclas capturadas durante la grabación
-        this.recordKeyHandler = null; // Handler para grabar teclas
+        this.saveSettingsTimeout = null; // debounce timer for auto-save
+        this.pressedKeys = new Set();
+        this.isRecording = false;
+        this.recordingKeys = new Set();
+        this.recordKeyHandler = null;
         this.serverStopping = false;
         this.serverUpdating = false;
 
@@ -22,20 +17,17 @@ class KeybrameAdmin {
     }
 
     async init() {
-        // Cargar datos iniciales
         await this.loadSettings();
         await this.loadImages();
         await this.loadKeybindings();
         this.loadVersionBadge();
 
-        // Setup event listeners
         this.setupEventListeners();
         this.setupDragAndDrop();
         this.setupImageUpload();
         this.setupImagePicker();
         this.setupSocketIO();
 
-        // Asegurar que el preview iframe se cargue correctamente
         this.refreshPreviewIframe();
     }
 
@@ -51,9 +43,8 @@ class KeybrameAdmin {
     refreshPreviewIframe() {
         const previewIframe = document.getElementById('preview-iframe');
         if (previewIframe) {
-            // Forzar recarga del iframe con timestamp para evitar cache
-            const timestamp = Date.now();
-            previewIframe.src = `/?t=${timestamp}`;
+            // Force reload with timestamp to bypass cache
+            previewIframe.src = `/?t=${Date.now()}`;
         }
     }
 
@@ -79,13 +70,11 @@ class KeybrameAdmin {
             this.updatePressedKeysDisplay();
         });
 
-        // Escuchar eventos de teclas liberadas
         this.socket.on('key_released', (data) => {
             this.pressedKeys.delete(data.key);
             this.updatePressedKeysDisplay();
         });
 
-        // Actualización automática
         this.socket.on('update_available', (data) => this.showUpdateBanner(data));
         this.socket.on('update_progress', (data) => this.onUpdateProgress(data.progress));
         this.socket.on('update_installing', () => {
@@ -153,7 +142,6 @@ class KeybrameAdmin {
             return;
         }
 
-        // Crear chips para cada tecla presionada
         const keysArray = Array.from(this.pressedKeys);
         container.innerHTML = keysArray.map(key => `
             <span class="pressed-key-chip">
@@ -170,15 +158,12 @@ class KeybrameAdmin {
             const response = await fetch('/api/settings');
             this.settings = await response.json();
 
-            // Actualizar UI
             document.getElementById('input-port').value = this.settings.port || 5000;
             document.getElementById('input-default-image').value = this.removeImagesPrefix(this.settings.default_image) || '';
             this.updateDefaultImagePreview();
 
-            // Llenar URL para OBS
             const port = this.settings.port || 5000;
-            const obsUrl = `http://localhost:${port}/`;
-            document.getElementById('obs-url-display').value = obsUrl;
+            document.getElementById('obs-url-display').value = `http://localhost:${port}/`;
 
         } catch (error) {
             this.showNotification('Error al cargar configuración: ' + error.message, 'error');
@@ -226,11 +211,9 @@ class KeybrameAdmin {
     createKeybindingHTML(kb) {
         const keysHTML = kb.keys.map(key => `<span class="key-chip">${this.formatKeyName(key)}</span>`).join('');
 
-        // Formatear el tipo
         const typeText = kb.type === 'toggle' ? 'Alternar' : 'Mantener';
         const typeIcon = kb.type === 'toggle' ? '<i class="fas fa-sync-alt"></i>' : '<i class="fas fa-hand-paper"></i>';
 
-        // Transiciones
         const transitionBadges = [];
         if (kb.transition_in) transitionBadges.push('<span class="keybinding-badge"><i class="fas fa-sign-in-alt"></i> Entrada</span>');
         if (kb.transition_out) transitionBadges.push('<span class="keybinding-badge"><i class="fas fa-sign-out-alt"></i> Salida</span>');
@@ -266,14 +249,13 @@ class KeybrameAdmin {
     renderModalKeyChips() {
         const container = document.getElementById('modal-key-chips');
 
-        // Mostrar teclas seleccionadas
         let html = this.selectedKeys.map(key => `
             <span class="key-chip removable" onclick="admin.removeModalKey('${key}')" title="Click para quitar">
                 ${this.formatKeyName(key)}
             </span>
         `).join('');
 
-        // Si está grabando, mostrar teclas en grabación con estilo diferente
+        // Show keys being recorded in a different style
         if (this.isRecording && this.recordingKeys.size > 0) {
             const recordingHtml = Array.from(this.recordingKeys).map(key => `
                 <span class="key-chip recording-chip">
@@ -314,14 +296,12 @@ class KeybrameAdmin {
             const select = document.getElementById(selectId);
             const currentValue = select.value;
 
-            // Mantener la opción vacía
             const emptyOption = select.querySelector('option[value=""]');
             select.innerHTML = '';
             if (emptyOption) {
                 select.appendChild(emptyOption);
             }
 
-            // Agregar imágenes
             this.images.forEach(img => {
                 const option = document.createElement('option');
                 option.value = img.path;
@@ -329,7 +309,6 @@ class KeybrameAdmin {
                 select.appendChild(option);
             });
 
-            // Restaurar valor si existía
             if (currentValue) {
                 select.value = currentValue;
             }
@@ -355,13 +334,11 @@ class KeybrameAdmin {
         return keyMap[key] || key.toUpperCase();
     }
 
-    // Quitar prefijo "assets/" de las rutas
     removeImagesPrefix(path) {
         if (!path) return '';
         return path.replace(/^assets\//, '');
     }
 
-    // Agregar prefijo "assets/" si no lo tiene
     addImagesPrefix(path) {
         if (!path) return '';
         if (path.startsWith('assets/')) return path;
@@ -421,10 +398,9 @@ class KeybrameAdmin {
             }
         }
 
-        // Reload images after upload
         await this.loadImages();
 
-        // Si el image picker está abierto, actualizarlo
+        // If image picker is open, refresh it
         const imagePickerModal = document.getElementById('image-picker-modal');
         if (imagePickerModal && imagePickerModal.style.display === 'flex') {
             this.renderImagePicker();
@@ -463,18 +439,15 @@ class KeybrameAdmin {
         const uploadArea = document.getElementById('upload-area');
         const fileInput = document.getElementById('upload-file-input');
 
-        // Click to upload
         uploadArea.addEventListener('click', () => fileInput.click());
 
-        // File input change
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
                 this.uploadImages(Array.from(e.target.files));
-                fileInput.value = ''; // Reset input
+                fileInput.value = '';
             }
         });
 
-        // Drag & drop
         uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
             uploadArea.classList.add('drag-over');
@@ -521,7 +494,6 @@ class KeybrameAdmin {
             return;
         }
 
-        // Get current selection for this target
         let currentValue = '';
         if (this.imagePickerTarget === 'main') {
             currentValue = document.getElementById('modal-input-image').value;
@@ -547,7 +519,6 @@ class KeybrameAdmin {
     }
 
     selectImage(imagePath) {
-        // Update the corresponding input
         let inputId, previewId;
 
         if (this.imagePickerTarget === 'main') {
@@ -561,38 +532,30 @@ class KeybrameAdmin {
             previewId = 'modal-transition-out-preview';
         } else if (this.imagePickerTarget === 'default') {
             inputId = 'input-default-image';
-            previewId = null; // No preview for default image in settings
+            previewId = null;
         }
 
         if (inputId) {
-            // Mostrar solo el filename sin "images/"
             const displayPath = this.removeImagesPrefix(imagePath);
             document.getElementById(inputId).value = displayPath;
             if (previewId) {
                 this.showImagePreview(imagePath, previewId);
             }
-            // Update default image preview if selecting default image
             if (this.imagePickerTarget === 'default') {
                 this.updateDefaultImagePreview();
-                // Auto-save cuando se cambia la imagen por defecto
                 this.saveSettings();
             }
         }
 
-        // Close picker
         this.closeImagePicker();
     }
 
     // ==================== EVENT LISTENERS ====================
 
     setupEventListeners() {
-        // Reload config
         document.getElementById('btn-reload').addEventListener('click', () => this.reloadConfig());
-
-        // Export
         document.getElementById('btn-export').addEventListener('click', () => this.exportConfig());
 
-        // Import
         document.getElementById('btn-import').addEventListener('click', () => {
             document.getElementById('import-file-input').click();
         });
@@ -602,39 +565,26 @@ class KeybrameAdmin {
             }
         });
 
-        // Restart server
         document.getElementById('btn-restart').addEventListener('click', () => this.restartServer());
-
-        // Shutdown server
         document.getElementById('btn-shutdown').addEventListener('click', () => this.shutdownServer());
-
-        // Copy OBS URL
         document.getElementById('btn-copy-obs-url').addEventListener('click', () => this.copyObsUrl());
 
-        // Default image picker
         document.getElementById('btn-select-default-image').addEventListener('click', () => {
             this.openImagePicker('default');
         });
-
         document.getElementById('input-default-image').addEventListener('click', () => {
             this.openImagePicker('default');
         });
 
-        // Auto-save puerto (con debounce)
+        // Auto-save port with 2s debounce
         document.getElementById('input-port').addEventListener('input', () => {
             clearTimeout(this.saveSettingsTimeout);
-            this.saveSettingsTimeout = setTimeout(() => {
-                this.saveSettings();
-            }, 2000); // Esperar 2 segundos después de que el usuario deje de escribir
+            this.saveSettingsTimeout = setTimeout(() => this.saveSettings(), 2000);
         });
 
-        // Save settings (botón manual - muestra notificación)
         document.getElementById('btn-save-settings').addEventListener('click', () => this.saveSettings(false));
-
-        // Add keybinding
         document.getElementById('btn-add-keybinding').addEventListener('click', () => this.openModal());
 
-        // Modal
         document.getElementById('modal-close').addEventListener('click', () => this.closeModal());
         document.getElementById('modal-cancel').addEventListener('click', () => this.closeModal());
         document.getElementById('keybinding-form').addEventListener('submit', (e) => {
@@ -642,85 +592,44 @@ class KeybrameAdmin {
             this.saveKeybinding();
         });
 
-        // Record keys button
         document.getElementById('btn-record-keys').addEventListener('click', () => this.toggleRecording());
-
-        // Clear keys button
         document.getElementById('btn-clear-keys').addEventListener('click', () => this.clearSelectedKeys());
 
-        // Type selector buttons
         document.querySelectorAll('.type-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const button = e.currentTarget;
                 const type = button.dataset.type;
-
-                // Update active state
                 document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
                 button.classList.add('active');
-
-                // Update hidden input
                 document.getElementById('modal-input-type').value = type;
             });
         });
 
-        // Transition toggles
         document.getElementById('modal-checkbox-transition-in').addEventListener('change', (e) => {
             document.getElementById('modal-transition-in-fields').style.display = e.target.checked ? 'block' : 'none';
         });
-
         document.getElementById('modal-checkbox-transition-out').addEventListener('change', (e) => {
             document.getElementById('modal-transition-out-fields').style.display = e.target.checked ? 'block' : 'none';
         });
 
-        // Image picker buttons
-        document.getElementById('btn-select-image').addEventListener('click', () => {
-            this.openImagePicker('main');
-        });
+        document.getElementById('btn-select-image').addEventListener('click', () => this.openImagePicker('main'));
+        document.getElementById('modal-input-image').addEventListener('click', () => this.openImagePicker('main'));
+        document.getElementById('btn-select-transition-in').addEventListener('click', () => this.openImagePicker('transition-in'));
+        document.getElementById('modal-input-transition-in').addEventListener('click', () => this.openImagePicker('transition-in'));
+        document.getElementById('btn-select-transition-out').addEventListener('click', () => this.openImagePicker('transition-out'));
+        document.getElementById('modal-input-transition-out').addEventListener('click', () => this.openImagePicker('transition-out'));
 
-        document.getElementById('modal-input-image').addEventListener('click', () => {
-            this.openImagePicker('main');
-        });
-
-        document.getElementById('btn-select-transition-in').addEventListener('click', () => {
-            this.openImagePicker('transition-in');
-        });
-
-        document.getElementById('modal-input-transition-in').addEventListener('click', () => {
-            this.openImagePicker('transition-in');
-        });
-
-        document.getElementById('btn-select-transition-out').addEventListener('click', () => {
-            this.openImagePicker('transition-out');
-        });
-
-        document.getElementById('modal-input-transition-out').addEventListener('click', () => {
-            this.openImagePicker('transition-out');
-        });
-
-        // Image picker modal
-        document.getElementById('image-picker-close').addEventListener('click', () => {
-            this.closeImagePicker();
-        });
-
-        // Upload from image picker modal
+        document.getElementById('image-picker-close').addEventListener('click', () => this.closeImagePicker());
         document.getElementById('btn-upload-from-picker').addEventListener('click', () => {
             document.getElementById('upload-file-input').click();
         });
 
         // Close modals on backdrop click
-        // Modal de keybinding
-        const mainModal = document.getElementById('modal');
-        const mainBackdrop = mainModal?.querySelector('.modal-backdrop');
-        if (mainBackdrop) {
-            mainBackdrop.addEventListener('click', () => this.closeModal());
-        }
+        const mainBackdrop = document.getElementById('modal')?.querySelector('.modal-backdrop');
+        if (mainBackdrop) mainBackdrop.addEventListener('click', () => this.closeModal());
 
-        // Modal de image picker
-        const imagePickerModal = document.getElementById('image-picker-modal');
-        const imagePickerBackdrop = imagePickerModal?.querySelector('.modal-backdrop');
-        if (imagePickerBackdrop) {
-            imagePickerBackdrop.addEventListener('click', () => this.closeImagePicker());
-        }
+        const imagePickerBackdrop = document.getElementById('image-picker-modal')?.querySelector('.modal-backdrop');
+        if (imagePickerBackdrop) imagePickerBackdrop.addEventListener('click', () => this.closeImagePicker());
     }
 
     // ==================== DRAG & DROP ====================
@@ -795,7 +704,6 @@ class KeybrameAdmin {
         try {
             const portValue = parseInt(document.getElementById('input-port').value);
 
-            // Validar puerto
             if (isNaN(portValue) || portValue < 1 || portValue > 65535) {
                 this.showNotification('Puerto inválido. Debe ser un número entre 1 y 65535.', 'error');
                 return;
@@ -819,25 +727,19 @@ class KeybrameAdmin {
 
             const result = await response.json();
 
-            // Solo mostrar notificación si no es silencioso (auto-save)
             if (!silent) {
                 this.showNotification('Configuración guardada exitosamente', 'success');
             }
 
-            // Reload config on server to apply changes immediately
             await this.reloadConfig();
-
-            // Update default image preview
             this.updateDefaultImagePreview();
 
-            // Refresh preview iframe to show new default image
             const previewIframe = document.getElementById('preview-iframe');
             if (previewIframe) {
                 previewIframe.src = previewIframe.src;
             }
 
             if (result.reloadRequired) {
-                // El puerto cambió, reiniciar automáticamente y redirigir
                 await this.restartAndRedirect(data.port);
             }
 
@@ -850,22 +752,13 @@ class KeybrameAdmin {
         this.showNotification('Reiniciando servidor con nuevo puerto...', 'info');
 
         try {
-            // Iniciar reinicio del servidor
             await fetch('/api/server/restart', { method: 'POST' });
-
-            // Esperar 4 segundos para que el servidor se reinicie completamente
             await new Promise(resolve => setTimeout(resolve, 4000));
-
-            // Redirigir al admin en el nuevo puerto con timestamp para evitar cache
-            const newUrl = `http://localhost:${newPort}/admin?t=${Date.now()}`;
-            window.location.href = newUrl;
-
+            window.location.href = `http://localhost:${newPort}/admin?t=${Date.now()}`;
         } catch (error) {
-            // Si falla el fetch, probablemente el servidor ya se está reiniciando
-            // Esperar y redirigir de todas formas
+            // Server is probably already restarting, wait and redirect anyway
             await new Promise(resolve => setTimeout(resolve, 4000));
-            const newUrl = `http://localhost:${newPort}/admin?t=${Date.now()}`;
-            window.location.href = newUrl;
+            window.location.href = `http://localhost:${newPort}/admin?t=${Date.now()}`;
         }
     }
 
@@ -873,25 +766,17 @@ class KeybrameAdmin {
         this.editingId = keybinding ? keybinding.id : null;
         this.selectedKeys = keybinding ? [...keybinding.keys] : [];
 
-        // Reset form
         document.getElementById('keybinding-form').reset();
         this.renderModalKeyChips();
 
-        // Set title
         document.getElementById('modal-title').textContent = keybinding ? 'Editar Atajo' : 'Agregar Atajo';
 
         if (keybinding) {
-            // Fill form
             const bindingType = keybinding.type || 'toggle';
             document.getElementById('modal-input-type').value = bindingType;
 
-            // Update type buttons
             document.querySelectorAll('.type-btn').forEach(btn => {
-                if (btn.dataset.type === bindingType) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
+                btn.classList.toggle('active', btn.dataset.type === bindingType);
             });
 
             document.getElementById('modal-input-image').value = this.removeImagesPrefix(keybinding.image);
@@ -899,7 +784,6 @@ class KeybrameAdmin {
 
             this.showImagePreview(keybinding.image, 'modal-image-preview');
 
-            // Transition in
             if (keybinding.transition_in) {
                 document.getElementById('modal-checkbox-transition-in').checked = true;
                 document.getElementById('modal-transition-in-fields').style.display = 'block';
@@ -911,7 +795,6 @@ class KeybrameAdmin {
                 document.getElementById('modal-transition-in-fields').style.display = 'none';
             }
 
-            // Transition out
             if (keybinding.transition_out) {
                 document.getElementById('modal-checkbox-transition-out').checked = true;
                 document.getElementById('modal-transition-out-fields').style.display = 'block';
@@ -923,23 +806,16 @@ class KeybrameAdmin {
                 document.getElementById('modal-transition-out-fields').style.display = 'none';
             }
         } else {
-            // Clear previews
             document.getElementById('modal-image-preview').classList.remove('show');
             document.getElementById('modal-transition-in-preview').classList.remove('show');
             document.getElementById('modal-transition-out-preview').classList.remove('show');
 
-            // Set default type to toggle
             document.getElementById('modal-input-type').value = 'toggle';
             document.querySelectorAll('.type-btn').forEach(btn => {
-                if (btn.dataset.type === 'toggle') {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
+                btn.classList.toggle('active', btn.dataset.type === 'toggle');
             });
         }
 
-        // Show modal
         document.getElementById('modal').style.display = 'block';
     }
 
@@ -962,31 +838,23 @@ class KeybrameAdmin {
             description: document.getElementById('modal-input-description').value
         };
 
-        // Transition in
         if (document.getElementById('modal-checkbox-transition-in').checked) {
             const transImage = document.getElementById('modal-input-transition-in').value;
             const duration = document.getElementById('modal-input-duration-in').value;
-
             if (transImage) {
                 data.transition_in = { image: this.addImagesPrefix(transImage) };
-                if (duration) {
-                    data.transition_in.duration = parseInt(duration);
-                }
+                if (duration) data.transition_in.duration = parseInt(duration);
             }
         } else {
             data.transition_in = null;
         }
 
-        // Transition out
         if (document.getElementById('modal-checkbox-transition-out').checked) {
             const transImage = document.getElementById('modal-input-transition-out').value;
             const duration = document.getElementById('modal-input-duration-out').value;
-
             if (transImage) {
                 data.transition_out = { image: this.addImagesPrefix(transImage) };
-                if (duration) {
-                    data.transition_out.duration = parseInt(duration);
-                }
+                if (duration) data.transition_out.duration = parseInt(duration);
             }
         } else {
             data.transition_out = null;
@@ -1016,8 +884,6 @@ class KeybrameAdmin {
 
             this.closeModal();
             await this.loadKeybindings();
-
-            // Reload config on server to apply changes immediately
             await this.reloadConfig();
 
         } catch (error) {
@@ -1038,21 +904,15 @@ class KeybrameAdmin {
             'Eliminar atajo'
         );
 
-        if (!confirmed) {
-            return;
-        }
+        if (!confirmed) return;
 
         try {
-            const response = await fetch(`/api/keybindings/${id}`, {
-                method: 'DELETE'
-            });
+            const response = await fetch(`/api/keybindings/${id}`, { method: 'DELETE' });
 
             if (!response.ok) throw new Error('Failed to delete keybinding');
 
             this.showNotification('Atajo eliminado exitosamente', 'success');
             await this.loadKeybindings();
-
-            // Reload config on server to apply changes immediately
             await this.reloadConfig();
 
         } catch (error) {
@@ -1078,13 +938,11 @@ class KeybrameAdmin {
         const hint = document.getElementById('record-hint');
 
         if (this.isRecording) {
-            // Detener grabación
             this.stopRecording();
             btn.classList.remove('recording');
             btnText.textContent = 'Grabar Teclas';
             hint.style.display = 'none';
         } else {
-            // Iniciar grabación
             this.startRecording();
             btn.classList.add('recording');
             btnText.textContent = 'Detener Grabación';
@@ -1096,23 +954,16 @@ class KeybrameAdmin {
         this.isRecording = true;
         this.recordingKeys = new Set();
 
-        // Crear handler y guardarlo para poder removerlo después
         this.recordKeyHandler = (data) => {
             if (!this.isRecording) return;
 
             const key = data.key;
-
-            // Ignorar teclas especiales que no queremos
             if (['<unknown>', '?', 'unknown'].includes(key)) return;
 
-            // Agregar a las teclas en grabación
             this.recordingKeys.add(key);
-
-            // Renderizar en tiempo real
             this.renderModalKeyChips();
         };
 
-        // Escuchar eventos del socket para capturar teclas
         if (this.socket) {
             this.socket.on('key_pressed', this.recordKeyHandler);
         } else {
@@ -1123,13 +974,11 @@ class KeybrameAdmin {
     stopRecording() {
         this.isRecording = false;
 
-        // Dejar de escuchar
         if (this.socket && this.recordKeyHandler) {
             this.socket.off('key_pressed', this.recordKeyHandler);
             this.recordKeyHandler = null;
         }
 
-        // Agregar las teclas capturadas a selectedKeys
         this.recordingKeys.forEach(key => {
             if (!this.selectedKeys.includes(key)) {
                 this.selectedKeys.push(key);
@@ -1163,7 +1012,7 @@ class KeybrameAdmin {
             this.showNotification('Configuración recargada exitosamente', 'success');
 
         } catch (error) {
-            console.error('Error al recargar configuración:', error);
+            console.error('Error reloading config:', error);
             this.showNotification('Error al recargar configuración: ' + error.message, 'error');
         }
     }
@@ -1208,7 +1057,6 @@ class KeybrameAdmin {
 
             this.showNotification('Configuración importada exitosamente', 'success');
 
-            // Reload data
             await this.loadSettings();
             await this.loadKeybindings();
 
@@ -1223,21 +1071,14 @@ class KeybrameAdmin {
             'Reiniciar servidor'
         );
 
-        if (!confirmed) {
-            return;
-        }
+        if (!confirmed) return;
 
         try {
-            const response = await fetch('/api/server/restart', {
-                method: 'POST'
-            });
+            const response = await fetch('/api/server/restart', { method: 'POST' });
 
             if (response.ok) {
                 this.showNotification('Servidor reiniciando...', 'success');
-                // Esperar un poco y recargar la página
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
+                setTimeout(() => window.location.reload(), 2000);
             } else {
                 throw new Error('Error al reiniciar servidor');
             }
@@ -1252,14 +1093,10 @@ class KeybrameAdmin {
             'Apagar servidor'
         );
 
-        if (!confirmed) {
-            return;
-        }
+        if (!confirmed) return;
 
         try {
-            const response = await fetch('/api/server/shutdown', {
-                method: 'POST'
-            });
+            const response = await fetch('/api/server/shutdown', { method: 'POST' });
 
             if (response.ok) {
                 this.serverStopping = true;
@@ -1275,13 +1112,13 @@ class KeybrameAdmin {
     copyObsUrl() {
         const urlField = document.getElementById('obs-url-display');
         urlField.select();
-        urlField.setSelectionRange(0, 99999); // Para dispositivos móviles
+        urlField.setSelectionRange(0, 99999); // mobile support
 
         try {
             navigator.clipboard.writeText(urlField.value).then(() => {
                 this.showNotification('URL copiada al portapapeles', 'success');
             }).catch(() => {
-                // Fallback para navegadores antiguos
+                // Fallback for older browsers
                 document.execCommand('copy');
                 this.showNotification('URL copiada al portapapeles', 'success');
             });
@@ -1300,30 +1137,12 @@ class KeybrameAdmin {
 
             titleEl.textContent = title;
             messageEl.textContent = message;
-
-            // Mostrar modal
             modal.style.display = 'flex';
 
-            // Handler para confirmar
-            const handleConfirm = () => {
-                cleanup();
-                resolve(true);
-            };
+            const handleConfirm = () => { cleanup(); resolve(true); };
+            const handleCancel = () => { cleanup(); resolve(false); };
+            const handleEscape = (e) => { if (e.key === 'Escape') handleCancel(); };
 
-            // Handler para cancelar
-            const handleCancel = () => {
-                cleanup();
-                resolve(false);
-            };
-
-            // Handler para cerrar con Escape
-            const handleEscape = (e) => {
-                if (e.key === 'Escape') {
-                    handleCancel();
-                }
-            };
-
-            // Limpiar listeners y cerrar modal
             const cleanup = () => {
                 modal.style.display = 'none';
                 confirmBtn.removeEventListener('click', handleConfirm);
@@ -1331,20 +1150,18 @@ class KeybrameAdmin {
                 document.removeEventListener('keydown', handleEscape);
             };
 
-            // Agregar listeners
             confirmBtn.addEventListener('click', handleConfirm);
             cancelBtn.addEventListener('click', handleCancel);
             document.addEventListener('keydown', handleEscape);
 
-            // Focus en el botón de cancelar por defecto (más seguro)
-            cancelBtn.focus();
+            cancelBtn.focus(); // safer default focus
         });
     }
 
     showNotification(message, type = 'success') {
         const container = document.getElementById('toast-container');
 
-        // Limitar a máximo 3 notificaciones
+        // Max 3 toasts at once
         const toasts = container.querySelectorAll('.toast');
         if (toasts.length >= 3) {
             toasts[0].remove();
@@ -1369,13 +1186,11 @@ class KeybrameAdmin {
 
         container.appendChild(toast);
 
-        // Auto remove after 3 seconds
         const autoClose = setTimeout(() => {
             toast.style.opacity = '0';
             setTimeout(() => toast.remove(), 300);
         }, 3000);
 
-        // Clear auto-close if closed manually
         toast.querySelector('.toast-close').addEventListener('click', () => {
             clearTimeout(autoClose);
         });
@@ -1383,5 +1198,4 @@ class KeybrameAdmin {
 
 }
 
-// Initialize app
 const admin = new KeybrameAdmin();

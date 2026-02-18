@@ -1,11 +1,8 @@
-#!/usr/bin/env python3
-
 import PyInstaller.__main__
 import os
 import sys
 import shutil
 
-# Agregar la raíz del proyecto al path para importar módulos
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from keybrame.utils.version import __version__
@@ -14,16 +11,15 @@ VERSION = __version__
 
 print(f"Building Keybrame v{VERSION}...")
 
-# Intentar limpiar directorios anteriores
 try:
     if os.path.exists('dist'):
         shutil.rmtree('dist')
     if os.path.exists('build'):
         shutil.rmtree('build')
 except PermissionError:
-    print("\n[ERROR] No se pudo eliminar dist/build")
-    print("Cierra Keybrame.exe antes de compilar de nuevo")
-    print("(Click derecho en el icono del tray -> Detener servidor)\n")
+    print("\n[ERROR] Could not delete dist/build")
+    print("Close Keybrame.exe before building again")
+    print("(Right-click the tray icon -> Stop server)\n")
     sys.exit(1)
 
 args = [
@@ -56,5 +52,5 @@ if os.path.exists('scripts/app.ico'):
 
 PyInstaller.__main__.run(args)
 
-print(f"\n[OK] Build completado: dist/Keybrame.exe")
+print(f"\n[OK] Build complete: dist/Keybrame.exe")
 print(f"[OK] Version: {VERSION}")

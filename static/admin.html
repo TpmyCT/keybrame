@@ -51,7 +51,7 @@
     <main class="container">
         <!-- Settings and Preview Layout -->
         <div class="settings-preview-grid">
-            <!-- Preview en Tiempo Real -->
+            <!-- Live Preview -->
             <section class="card preview-card">
                 <div class="section-header">
                     <h2><i class="fas fa-eye"></i> Vista previa en tiempo real</h2>
@@ -64,7 +64,7 @@
                     <iframe id="preview-iframe" src="/" frameborder="0"></iframe>
                 </div>
 
-                <!-- Panel de teclas presionadas -->
+                <!-- Pressed keys panel -->
                 <div class="pressed-keys-panel">
                     <h3><i class="fas fa-keyboard"></i> Teclas presionadas</h3>
                     <div id="pressed-keys-display" class="pressed-keys-display">
@@ -93,7 +93,7 @@
                     </div>
                 </div>
 
-                <!-- Imagen Predeterminada -->
+                <!-- Default Image -->
                 <div class="default-image-section">
                     <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem;">
                         <i class="fas fa-image"></i> Imagen predeterminada
@@ -119,7 +119,7 @@
             </section>
         </div>
 
-        <!-- Atajos de Teclado Section -->
+        <!-- Keybindings Section -->
         <section class="card keybindings-section">
             <div class="section-header">
                 <h2><i class="fas fa-gamepad"></i> Atajos de teclado</h2>
@@ -129,7 +129,7 @@
             </div>
 
             <div id="keybindings-list" class="keybindings-list">
-                <!-- Atajos de Teclado will be rendered here -->
+                <!-- Keybindings will be rendered here -->
             </div>
 
             <div id="empty-state" class="empty-state" style="display: none;">
@@ -140,7 +140,7 @@
             </div>
         </section>
 
-        <!-- Galería de Imágenes Section -->
+        <!-- Image Gallery Section -->
         <section class="card">
             <h2><i class="fas fa-images"></i> Galería de imágenes</h2>
 
@@ -312,7 +312,7 @@
     <input type="file" id="import-file-input" accept=".json" style="display: none;">
     <input type="file" id="upload-file-input" accept="image/*" multiple style="display: none;">
 
-    <!-- Hidden port input (para que JavaScript no falle) -->
+    <!-- Hidden port input -->
     <input type="hidden" id="input-port">
 
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>

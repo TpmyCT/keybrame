@@ -63,7 +63,7 @@
             background: rgba(200, 0, 0, 0.7);
         }
 
-        /* Ocultar el indicador de estado después de 3 segundos */
+        /* Hide status indicator after 3 seconds */
         .status.hide {
             opacity: 0;
             transition: opacity 0.5s;
@@ -81,9 +81,8 @@
     <script>
         const statusEl = document.getElementById('status');
         const imageEl = document.getElementById('display-image');
-        let currentTransitionTimeout = null; // Trackear timeout actual
+        let currentTransitionTimeout = null;
 
-        // Conectar al servidor WebSocket (usa el puerto actual automáticamente)
         const socket = io();
 
         socket.on('connect', () => {
@@ -91,7 +90,7 @@
             statusEl.textContent = 'Conectado';
             statusEl.className = 'status connected';
 
-            // Ocultar después de 3 segundos
+            // Hide after 3 seconds
             setTimeout(() => {
                 statusEl.classList.add('hide');
             }, 3000);
@@ -107,7 +106,7 @@
         socket.on('image_change', (data) => {
             console.log('Cambio de imagen:', data.image);
 
-            // CANCELAR cualquier transición pendiente
+            // Cancel any pending transition
             if (currentTransitionTimeout) {
                 clearTimeout(currentTransitionTimeout);
                 currentTransitionTimeout = null;
@@ -115,13 +114,13 @@
             }
 
             if (data.image) {
-                // Precargar imagen antes de cambiarla (evita flash de "alt")
+                // Preload image before swapping (avoids alt flash)
                 const preloadImg = new Image();
                 preloadImg.onload = () => {
                     imageEl.src = data.image;
                 };
                 preloadImg.onerror = () => {
-                    // Si falla la precarga, cambiar de todas formas
+                    // If preload fails, change anyway
                     imageEl.src = data.image;
                 };
                 preloadImg.src = data.image;
@@ -134,24 +133,24 @@
             console.log('   Final:', data.final_image);
             console.log('   Duración:', data.duration || 'auto', 'ms');
 
-            // CANCELAR cualquier transición pendiente
+            // Cancel any pending transition
             if (currentTransitionTimeout) {
                 clearTimeout(currentTransitionTimeout);
                 currentTransitionTimeout = null;
                 console.log('⚠ Transición anterior cancelada');
             }
 
-            // Precargar y mostrar imagen de transición
+            // Preload and show transition image
             const transitionImg = new Image();
             transitionImg.onload = () => {
                 imageEl.src = data.transition_image;
                 console.log('✅ Mostrando transición:', data.transition_image);
 
-                // Precargar imagen final mientras se muestra la transición
+                // Preload final image while transition plays
                 const finalImg = new Image();
                 finalImg.src = data.final_image;
 
-                // Programar cambio a imagen final
+                // Schedule switch to final image
                 const duration = data.duration || 2000; // Default 2000ms
                 currentTransitionTimeout = setTimeout(() => {
                     imageEl.src = data.final_image;
@@ -160,13 +159,12 @@
                 }, duration);
             };
             transitionImg.onerror = () => {
-                // Si falla la transición, ir directo a la imagen final
+                // If transition fails, go directly to final image
                 imageEl.src = data.final_image;
             };
             transitionImg.src = data.transition_image;
         });
 
-        // Manejo de errores de carga de imagen
         imageEl.onerror = () => {
             console.error('Error cargando imagen:', imageEl.src);
         };

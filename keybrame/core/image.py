@@ -1,10 +1,8 @@
-#!/usr/bin/env python3
-
 from PIL import Image
 
 
 def calculate_gif_duration(image_path):
-    """Calcula la duración total de un GIF en milisegundos"""
+    """Returns total GIF duration in milliseconds"""
     try:
         with Image.open(image_path) as img:
             if not hasattr(img, 'n_frames') or img.n_frames <= 1:
